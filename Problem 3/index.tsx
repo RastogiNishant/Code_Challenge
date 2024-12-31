@@ -6,6 +6,7 @@ interface BoxProps {
 interface WalletBalance {
 	currency: string;
 	amount: number;
+	blockchain: string;
 }
 interface FormattedWalletBalance extends WalletBalance {
 	// as we have interface WalletBalance, we can extend it without using them separately
@@ -28,8 +29,8 @@ const blockchainPriority: BlockchainPriority = {
 
 const WalletPage: React.FC<Props> = ({ children, ...rest }) => {
 	// we can destructure children and rest from props rather than using props and then destructuring it and no need to define the props type again and again
-	const balances = useWalletBalances();
-	const prices = usePrices();
+	const balances = useWalletBalances(); // we are using the useWalletBalances hook to get the balances so we need to define its type
+	const prices = usePrices(); // we are using the usePrices hook to get the prices so we need to define its type
 
 	const getPriority = (blockchain: string): number => {
 		return blockchainPriority[blockchain] ?? -99; // we have created a blockchainPriority object(as record) and we are using it to get the priority of the blockchain
@@ -38,10 +39,10 @@ const WalletPage: React.FC<Props> = ({ children, ...rest }) => {
 	const sortedBalances = useMemo(
 		() =>
 			balances
-				.filter((balance: WalletBalance) => {
-					const balancePriority = getPriority(balance.blockchain);
-					// balancePriority > -99 and balance.amount > 0 can be combined into a single return statement
-					return balancePriority > -99 && balance.amount > 0;
+				.filter(({ blockchain, amount }: WalletBalance) => {
+					const balancePriority = getPriority(blockchain);
+					// balancePriority > -99 and amount > 0 can be combined into a single return statement
+					return balancePriority > -99 && amount > 0;
 				})
 				.sort((lhs: WalletBalance, rhs: WalletBalance) => {
 					const leftPriority = getPriority(lhs.blockchain);
@@ -49,7 +50,7 @@ const WalletPage: React.FC<Props> = ({ children, ...rest }) => {
 					// simplified sorting logic, but ensuring it handles equal priorities correctly
 					return leftPriority - rightPriority;
 				}),
-		[balances, prices],
+		[balances],
 	);
 
 	const formattedBalances: FormattedWalletBalance[] = sortedBalances.map(
@@ -63,15 +64,16 @@ const WalletPage: React.FC<Props> = ({ children, ...rest }) => {
 		}),
 	);
 
-	const rows = formattedBalances.map((balance) => {
-		const usdValue = prices[balance.currency] * balance.amount;
+	const rows = formattedBalances.map(({ currency, amount, formatted }) => {
+		const price = prices[currency] ?? 0;
+		const usdValue = price * amount;
 		return (
 			<WalletRow
 				className={classes.row}
-				key={balance.currency} // using a unique identifier instead of index for better keying
-				amount={balance.amount}
+				key={currency} // using a unique identifier instead of index for better keying
+				amount={amount}
 				usdValue={usdValue}
-				formattedAmount={balance.formatted}
+				formattedAmount={formatted}
 			/>
 		);
 	});
