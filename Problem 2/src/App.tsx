@@ -109,6 +109,7 @@ const App = () => {
 						onChange={handleFromAmountChange}
 						label='Amount'
 						error={error || undefined}
+						isSwapping={isSwapping}
 					/>
 
 					<div className='flex justify-center'>
@@ -151,6 +152,7 @@ const App = () => {
 						onChange={() => {}}
 						label="You'll receive"
 						disabled
+						isSwapping={isSwapping}
 					/>
 				</div>
 
